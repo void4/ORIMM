@@ -83,13 +83,13 @@ class VM:
 	def gmem(self, offset):
 		try:
 			return self.memory[self.mmap(offset)]
-		except IndexError:
+		except (IndexError, TypeError):
 			raise MemoryAccessException()
 
 	def smem(self, offset, value):
 		try:
 			self.memory[self.mmap(offset)] = value
-		except IndexError:
+		except (IndexError, TypeError):
 			raise MemoryAccessException()
 
 	def run(self):
@@ -102,7 +102,7 @@ class VM:
 
 				#if TOTAL_INSTR == 10:
 				#	break
-
+				print("IP", self.ip)
 				instr = self.gmem(self.ip)#can fail
 
 				instrcost = self.gas_map[instr]
@@ -137,10 +137,12 @@ class VM:
 					self.ip = args[1]
 					# have to do this in the end to not interfere with mmap calculations
 					self.mode = M_CHILD
+					jump = True
 				elif instr == I_INT:
 					self.mode = M_ROOT
 					self.ip = 0
 					self.gas = None
+					jump = True
 				elif instr == I_LMT:
 					self.build_gmap(args[0])
 					self.gas = args[1]
