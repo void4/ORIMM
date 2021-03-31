@@ -1,21 +1,49 @@
 from vm import VM, BITS
 from assembler import translate, insert
 
-standard_gas = [1,2,1,2,0,1,0]
+# Problem: lmt and run shouldn't be zero because otherwise child may use resources that way
+# wouldn't be necessary if these instruction raised an exception
+
+# Problem: syscall message passing: have to translate virtual to real memory
+# pages aren't fixed size, so message may be weirdly distributed across real pages, even same real address on several virtual addresses
+# first page of process fixed size, say 16 words: ret data + 15 keys
+
+# add relative jump instruction
+
+# allow interrupts?
+# memory mapped io?
+
+# how to recover gas and ip?
+
+# save interrupt data address in 16 word process root node
+
 code = translate("""
 segment main:
-lmt gasmap 1000
+
+jit inthandler
+
+lmt gasmap 10
 run memmap 0
 jmp main
 
+inthandler:
+
+jmp main
+
 segment gasmap:
-dw 1 2 1 2 0 1
+dw 1 2 1 2 0 0 5
 segment memmap:
 dw 1 child #child ;length of child segment
+
+segment data:
 ds "this is a test"
 
 segment child:
+start:
 add 0 0
+add 1 1
+add 2 2
+jmp child:start
 """)
 
 

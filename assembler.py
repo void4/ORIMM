@@ -125,28 +125,32 @@ def translate(program):
 					segment_length = total_size - seg_offset
 				return segment_length
 
+	def translateName(name):
+		if name in labels:
+			return labels[arg]
+		elif name in segments:
+			return segments[name]
+		elif name[0] == "#" and name[1:] in segments:
+			return segmentSize(name[1:])
+		elif ":" in name:
+			segment_name, label_name = name.split(":")
+			return labels[label_name] - segments[segment_name]
+
 	# Replace all labels with their offsets
 	for line in lines:
 		if line["type"] == "code":
 			for arg_index, arg in enumerate(line["code"][1:]):
 				if isint(arg):
 					pass
-				elif arg in labels:
-					line["code"][1+arg_index] = labels[arg]
-				elif arg in segments:
-					line["code"][1+arg_index] = segments[arg]
-				elif arg[0] == "#" and arg[1:] in segments:
-					line["code"][1+arg_index] = segmentSize(arg[1:])
+				else:
+					line["code"][1+arg_index] = translateName(arg)
 		elif line["type"] == "data":
 			for data_index, data in enumerate(line["data"]):
 				if isint(data):
 					pass
-				elif data in labels:
-					line["data"][data_index] = labels[data]
-				elif data in segments:
-					line["data"][data_index] = segments[data]
-				elif data[0] == "#" and data[1:] in segments:
-					line["data"][data_index] = segmentSize(data[1:])
+				else:
+					line["data"][data_index] = translateName(data)
+
 	# Assemble
 
 	binary = []
