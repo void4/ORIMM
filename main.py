@@ -21,8 +21,10 @@ from assembler import translate, insert
 # just one?
 # def need some workspace
 
+# give run a return value address parameter?
+
 code = translate("""
-segment@10 main:
+segment@0 main:
 
 jit inthandler
 
@@ -48,6 +50,9 @@ add 0 0
 add 1 1
 add 2 2
 jmp child:start
+
+segment free:
+dzw 1000
 """)
 
 

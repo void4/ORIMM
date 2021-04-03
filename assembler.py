@@ -89,11 +89,16 @@ def translate(program):
 				wordstr.append(int.from_bytes(bytestr[i*bytes_per_word:i*bytes_per_word+bytes_per_word], byteorder="little"))#, bytes_per_word)
 			print(wordstr)
 			line["data"] = wordstr
+		elif opline[0].upper() == "DZW":
+			line["type"] = "data"
+			line["data"] = [0 for i in range(int(opline[1]))]
+			opcount += int(opline[1])
 		elif opline[0]:
 			raise Exception("Invalid symbol: ", opline[0], "Line", no)
 		else:
 			line["type"] = "whitespace"
 
+		# XXX is opcount even used for anything?
 		line["opcount"] = opcount
 
 
