@@ -29,11 +29,12 @@ def translate(program):
 
 	lines = [{"source":line} for line in program.split("\n")]
 
-	labels = {}
 	segments = {}
 	opcount = 0
 
 	DEFAULTVALUE = 0
+	# what if program was specified without segment?
+	current_segment = None
 
 	print(lines)
 	for no, line in enumerate(lines):
@@ -113,13 +114,14 @@ def translate(program):
 			line["offset"] = offset
 		if line["type"] == "label":
 			# do uniqueness check here or earlier
-			if line["name"] in labels:
+			if line["name"] in segments[current_segment]["labels"]:
 				raise Exception("Non-unique label name", line["name"])
-			labels[line["name"]] = offset
+			segments[current_segment]["labels"][line["name"]] = offset
 		elif line["type"] == "segment":
 			if line["name"] in segments:
 				raise Exception("Non-unique segment name", line["name"])
-			segments[line["name"]] = offset
+			segments[line["name"]] = {"labels":{}, "offset":offset}
+			current_segment = line["name"]
 		elif line["type"] == "code":
 			offset += len(line["code"])
 		elif line["type"] == "data":
@@ -127,43 +129,45 @@ def translate(program):
 
 	total_size = offset
 
-	sorted_segments = sorted(segments.items(), key=lambda kv:kv[1])
+	sorted_segments = sorted(segments.items(), key=lambda kv:kv[1]["offset"])
 
 	def segmentSize(name):
 		for seg_index, (seg_name, seg_offset) in enumerate(sorted_segments):
 			if seg_name == name:
 				if seg_index < len(sorted_segments)-1:
 					next_segment = sorted_segments[seg_index+1]
-					segment_length = next_segment[1] - seg_offset
+					segment_length = next_segment[1]["offset"] - seg_offset["offset"]
 				else:
-					segment_length = total_size - seg_offset
+					segment_length = total_size - seg_offset["offset"]
 				return segment_length
 
-	def translateName(name):
-		if name in labels:
-			return labels[arg]
+	def translateName(name, current_segment=None):
+		if name in segments[current_segment]["labels"]:
+			return segments[current_segment]["labels"][arg]
 		elif name in segments:
-			return segments[name]
+			return segments[name]["offset"]
 		elif name[0] == "#" and name[1:] in segments:
 			return segmentSize(name[1:])
 		elif ":" in name:
 			segment_name, label_name = name.split(":")
-			return labels[label_name] - segments[segment_name]
+			return segments[segment_name]["labels"][label_name] - segments[segment_name]["offset"]
 
 	# Replace all labels with their offsets
 	for line in lines:
-		if line["type"] == "code":
+		if line["type"] == "segment":
+			current_segment = line["name"]
+		elif line["type"] == "code":
 			for arg_index, arg in enumerate(line["code"][1:]):
 				if isint(arg):
 					pass
 				else:
-					line["code"][1+arg_index] = translateName(arg)
+					line["code"][1+arg_index] = translateName(arg, current_segment)
 		elif line["type"] == "data":
 			for data_index, data in enumerate(line["data"]):
 				if isint(data):
 					pass
 				else:
-					line["data"][data_index] = translateName(data)
+					line["data"][data_index] = translateName(data, current_segment)
 
 	# Assemble
 

@@ -22,6 +22,8 @@ from assembler import translate, insert
 # def need some workspace
 
 # give run a return value address parameter?
+# TODO all label names should be segment-relative
+# default labels like start?
 
 code = translate("""
 segment@0 main:
@@ -35,6 +37,10 @@ jmp main
 inthandler:
 
 jmp main
+
+allocate_memory:
+
+allocate_node:
 
 segment gasmap:
 dw 1 2 1 2 0 0 5
