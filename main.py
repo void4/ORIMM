@@ -17,12 +17,16 @@ from assembler import translate, insert
 
 # save interrupt data address in 16 word process root node
 
+# use certain memory regions as registers, passing data to OS?
+# just one?
+# def need some workspace
+
 code = translate("""
-segment main:
+segment@10 main:
 
 jit inthandler
 
-lmt gasmap 10
+lmt gasmap 1000
 run memmap 0
 jmp main
 

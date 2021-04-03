@@ -5,7 +5,7 @@ BITS = 64
 EXP = 2**BITS
 WORDMAX = EXP-1
 
-
+# TODO floating point instructions?
 NUMINSTR = 9
 I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM = range(NUMINSTR)
 
@@ -107,13 +107,14 @@ class VM:
 				print("HIT", key)
 				#if ord(key) == 27: # ESC
 				#	exit(0)
+				# TODO interrupting interrupt?
 				self.external_memory = key
 				self.mode = M_ROOT
 				self.interrupt = 1
 				self.state = S_INT
 				self.ip = 0
 
-			sleep(1)
+			sleep(0.1)
 
 			try:
 				TOTAL_INSTR += 1

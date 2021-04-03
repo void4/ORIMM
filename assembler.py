@@ -3,7 +3,7 @@ from math import ceil
 from vm import *
 
 def insert(a,o,b):
-	if o + len(b) >= len(a):
+	if o + len(b) > len(a):
 		raise Exception("too long, exceeds memory size")
 
 	i = 0
@@ -33,6 +33,8 @@ def translate(program):
 	segments = {}
 	opcount = 0
 
+	DEFAULTVALUE = 0
+
 	print(lines)
 	for no, line in enumerate(lines):
 		clean = line["source"].strip()#.lower()#can't lower cause of text
@@ -53,12 +55,14 @@ def translate(program):
 			label = opline[0][:-1]
 			line["name"] = label
 			#labels[label] = {"opc":opcount}
-		elif len(opline)== 2 and opline[0] == "segment":
+		elif len(opline)== 2 and opline[0] == "segment" or opline[0].startswith("segment@"):
 			if not opline[1].endswith(":"):
 				raise Exception("missing : in segment:", line, "Line", no)
 			line["type"] = "segment"
 			label = opline[1][:-1]
 			line["name"] = label
+			if "@" in opline[0]:
+				line["offset"] = int(opline[0].split("@")[1])
 			#segments[label] = {"opc":opcount}
 		elif (opindex:=opcode(opline[0])) is not None:
 			line["type"] = "code"
@@ -96,7 +100,12 @@ def translate(program):
 	# Calculate label offsets from expanded code
 	offset = 0
 	for line in lines:
-		line["offset"] = offset
+		if "offset" in line:
+			if line["offset"] < offset:
+				raise Excepion("Overlapping offset")
+			offset = line["offset"]
+		else:
+			line["offset"] = offset
 		if line["type"] == "label":
 			# do uniqueness check here or earlier
 			if line["name"] in labels:
@@ -153,16 +162,22 @@ def translate(program):
 
 	# Assemble
 
-	binary = []
+	binary = [None for i in range(total_size)]
 
 	for line in lines:
+		print(binary)
+		print(line)
 		if line["type"] == "code":
-			binary += line["code"]
+			insert(binary, line["offset"], line["code"])
+			#binary += line["code"]
 		elif line["type"] == "data":
-			binary += line["data"]
+			#binary += line["data"]
+			insert(binary, line["offset"], line["data"])
 
 	print("SEGMENTS")
 	for seg_name, seg_offset in sorted_segments:
 		print(seg_name, seg_offset, segmentSize(seg_name))
+
+	binary = [i if i is not None else DEFAULTVALUE for i in binary]
 
 	return binary
