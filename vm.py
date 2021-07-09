@@ -6,20 +6,20 @@ EXP = 2**BITS
 WORDMAX = EXP-1
 
 # TODO floating point instructions?
-NUMINSTR = 9
-I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM = range(NUMINSTR)
+NUMINSTR = 13
+I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI = range(NUMINSTR)
 
-II_ARITH = [I_ADD, I_MUL]
+II_ARITH = [I_ADD, I_MUL, I_SET, I_ADDI, I_MULI]
 II_CONTROL = [I_JMP, I_JLE]
 
-II_ROOT = II_ARITH + II_CONTROL + [I_RUN, I_LMT, I_JIT, I_REM]
-II_CHILD = II_ARITH + II_CONTROL + [I_INT]
+II_ROOT = II_ARITH + II_CONTROL + [I_RUN, I_LMT, I_JIT, I_REM] + [I_MLN]
+II_CHILD = II_ARITH + II_CONTROL + [I_INT] + [I_MLN]
 
 III = [II_ROOT, II_CHILD]
 
-INAMES = "I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM".replace("I_", "").split(", ")
+INAMES = "I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI".replace("I_", "").split(", ")
 
-I_ARGS = [2,2,1,3,2,2,0,1,2]
+I_ARGS = [2,2,1,3,2,2,0,1,2,1,2,2,2]
 
 M_ROOT, M_CHILD = range(2)
 
@@ -63,6 +63,7 @@ class VM:
 
 	# is this a temporary structure, cannot be modified from child, even if memory is mapped onto it
 	def build_mmap(self, offset):
+		# TODO force increasing, no overlap?
 		self.memory_map = []
 
 		mmaplen = self.gmem(offset)
@@ -85,6 +86,9 @@ class VM:
 		else:
 			return self.get_offset(offset)
 
+	def mmap_len(self):
+		return sum(sector[1] for sector in self.memory_map)
+
 	def gmem(self, offset, force_mmap=False):
 		try:
 			return self.memory[self.mmap(offset, force_mmap)]
@@ -96,6 +100,12 @@ class VM:
 			self.memory[self.mmap(offset, force_mmap)] = value
 		except (IndexError, TypeError):
 			raise MemoryAccessException()
+
+	def print_memory(self):
+		if self.mode == M_ROOT:
+			print(self.memory)
+		else:
+			print([self.gmem(offset) for offset in range(self.mmap_len())])
 
 	def run(self):
 		TOTAL_INSTR = 0
@@ -122,9 +132,17 @@ class VM:
 				#if TOTAL_INSTR == 10:
 				#	break
 				print("IP", self.ip)
+				self.print_memory()
 				instr = self.gmem(self.ip)#can fail
 
-				instrcost = self.gas_map[instr]
+				# TODO enforce accurate length gasmap?!
+				try:
+					instrcost = self.gas_map[instr]
+				except IndexError:
+					self.mode = M_ROOT
+					self.state = S_IIE
+					self.ip = 0
+					continue
 
 				if self.mode == M_CHILD and self.gas >= 0 and self.gas - instrcost < 0:
 					self.mode = M_ROOT
@@ -146,8 +164,12 @@ class VM:
 					continue
 				elif instr == I_ADD:
 					self.smem(args[0], self.gmem(args[0])+self.gmem(args[1]))
+				elif instr == I_ADDI:
+					self.smem(args[0], self.gmem(args[0])+args[1])
 				elif instr == I_MUL:
 					self.smem(args[0], self.gmem(args[0])*self.gmem(args[1]))
+				elif instr == I_MULI:
+					self.smem(args[0], self.gmem(args[0])*args[1])
 				elif instr == I_JMP:
 					self.ip = args[0]
 					jump = True
@@ -177,6 +199,13 @@ class VM:
 				elif instr == I_REM:
 					if args[1] < len(self.external_memory):
 						self.smem(args[0], self.external_memory[args[1]])
+				elif instr == I_MLN:
+					if self.mode == M_ROOT:
+						self.smem(args[0], len(self.memory))
+					else:
+						self.smem(args[0], self.mmap_len())
+				elif instr == I_SET:
+					self.smem(args[0], args[1])
 
 				if not jump:
 					self.ip += 1 + len(args)

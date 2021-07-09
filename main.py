@@ -22,15 +22,22 @@ from assembler import translate, insert
 # def need some workspace
 
 # give run a return value address parameter?
-# TODO all label names should be segment-relative
-# default labels like start?
+# default labels like start? - well, segment name is already offset
+
+# TODO use relative addressing
+
+# also use external_memory for comms between os and processes?
 
 code = translate("""
 segment@0 main:
 
 jit inthandler
 
-lmt gasmap 1000
+mln main:data
+
+
+
+lmt gasmap 100
 run memmap 0
 jmp main
 
@@ -38,31 +45,65 @@ inthandler:
 
 jmp main
 
+register:
+dw 0
+
 allocate_memory:
+add allocated register
 
 allocate_node:
+;set register 16
+;todo check memory size first
+addi allocated 16
+
+data:
+dw 42;real memlen
+
+allocated:
+dw free
 
 segment gasmap:
-dw 1 2 1 2 0 0 5
+;I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN
+dw 1 2 1 2 0 0 5 1 1 1
 segment memmap:
 dw 1 child #child ;length of child segment
 
 segment data:
 ds "this is a test"
 
+segment osdata:
+dw 0;capindex
+
+segment childnode:
+dw 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16;address of next node + 16 keys
+;next, memory
+
 segment child:
 start:
 add 0 0
 add 1 1
 add 2 2
+mln child:data
 jmp child:start
 
+data:
+dw 1;virtual memlen
+
 segment free:
-dzw 1000
+dzw 100
 """)
 
 
 memory = code
+
+import bz2
+import ctypes
+
+data = b"".join(v.to_bytes(8, byteorder="big") for v in memory)
+
+compressed = bz2.compress(data)
+
+print(len(data), "BYTES", len(compressed), "COMPRESSED")
 
 #memory = [0 for i in range(100)]
 
