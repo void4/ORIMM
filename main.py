@@ -38,12 +38,16 @@ mln main:data
 
 
 lmt gasmap 100
-run memmap 0
+run memmap oldip
 jmp main
 
 inthandler:
+oldip oldip
 
 jmp main
+
+oldip:
+dw 0
 
 register:
 dw 0
@@ -63,8 +67,8 @@ allocated:
 dw free
 
 segment gasmap:
-;I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN
-dw 1 2 1 2 0 0 5 1 1 1
+;I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI, I_OLDIP
+dw 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 segment memmap:
 dw 1 child #child ;length of child segment
 

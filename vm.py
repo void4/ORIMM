@@ -6,20 +6,20 @@ EXP = 2**BITS
 WORDMAX = EXP-1
 
 # TODO floating point instructions?
-NUMINSTR = 13
-I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI = range(NUMINSTR)
+NUMINSTR = 14
+I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI, I_OLDIP = range(NUMINSTR)
 
 II_ARITH = [I_ADD, I_MUL, I_SET, I_ADDI, I_MULI]
 II_CONTROL = [I_JMP, I_JLE]
 
-II_ROOT = II_ARITH + II_CONTROL + [I_RUN, I_LMT, I_JIT, I_REM] + [I_MLN]
+II_ROOT = II_ARITH + II_CONTROL + [I_RUN, I_LMT, I_JIT, I_REM, I_OLDIP] + [I_MLN]
 II_CHILD = II_ARITH + II_CONTROL + [I_INT] + [I_MLN]
 
 III = [II_ROOT, II_CHILD]
 
-INAMES = "I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI".replace("I_", "").split(", ")
+INAMES = "I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI, I_OLDIP".replace("I_", "").split(", ")
 
-I_ARGS = [2,2,1,3,2,2,0,1,2,1,2,2,2]
+I_ARGS = [2,2,1,3,2,2,0,1,2,1,2,2,2,1]
 
 M_ROOT, M_CHILD = range(2)
 
@@ -50,6 +50,7 @@ class VM:
 		self.gas = 0
 		self.mode = M_ROOT
 		self.ip = 0
+		self.oldip = 0
 
 
 
@@ -122,9 +123,10 @@ class VM:
 				self.mode = M_ROOT
 				self.interrupt = 1
 				self.state = S_INT
+				self.oldip = self.ip
 				self.ip = 0
 
-			sleep(0.1)
+			sleep(1)
 
 			try:
 				TOTAL_INSTR += 1
@@ -180,7 +182,7 @@ class VM:
 				elif instr == I_RUN:
 					# 0: real start address of memory map, +ip?
 					self.build_mmap(args[0])
-					self.ip = args[1]
+					self.ip = self.gmem(args[1])
 					# have to do this in the end to not interfere with mmap calculations
 					self.mode = M_CHILD
 					jump = True
@@ -206,6 +208,8 @@ class VM:
 						self.smem(args[0], self.mmap_len())
 				elif instr == I_SET:
 					self.smem(args[0], args[1])
+				elif instr == I_OLDIP:
+					self.smem(args[0], self.oldip)
 
 				if not jump:
 					self.ip += 1 + len(args)
