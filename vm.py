@@ -50,23 +50,23 @@ class MemoryAccessException(Exception):
 class VM:
 	def __init__(self, memory):
 		"""Initializes a virtual machine instance, which contains the complete runtime state of the computation"""
-		self.memory = memory
-		self.external_memory = []
-		self.interrupt = False
-		# memory layout: 0: first instruction
-
-		# Stores the cost for each instruction in a list, with index=opcode
-		self.gas_map = [0 for i in range(NUMINSTR)]
-
-		self.memory_map = []#also in memory?
-
-		self.state = None
-		self.gas = 0
 		self.mode = M_ROOT
+		self.state = None
+
 		self.ip = 0
 		self.oldip = 0
 
+		self.interrupt = False
+		
+		self.memory = memory
+		self.external_memory = []
+		# memory layout: 0: first instruction
 
+		# Stores the cost for each instruction in a list, with index=opcode
+		self.gas = 0
+		self.gas_map = [0 for i in range(NUMINSTR)]
+
+		self.memory_map = []#also in memory?
 
 
 	def build_gmap(self, offset):
