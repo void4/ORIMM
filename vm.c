@@ -219,7 +219,13 @@ void run(VM* vm, uint8_t debug) {
           smem(vm, args(vm, 0), mmap_len(vm));
         }
         break;
-      }
+      case I_SET:
+        smem(vm, args(vm, 0), args(vm, 1));
+        break;
+      case I_OLDIP:
+        smem(vm, args(vm, 0), vm->oldip);
+        break;
+    }
 
     if (!jump) {
       // TODO check for out of bounds here?!
