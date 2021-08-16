@@ -26,7 +26,12 @@
 
 #define I_RUN 11
 #define I_LMT 12
+
 #define I_OLDIP 13
+
+#define I_INVALID 14
+
+#define INSTRUCTION_ARGS {2,2, 2,2, 2, 1,2, 0,1, 1,1, 2,2, 1}
 
 typedef struct {
   uint64_t start;

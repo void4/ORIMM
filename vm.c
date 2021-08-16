@@ -14,6 +14,12 @@ VM* init_vm() {
   Memory *external_memory = malloc(sizeof(Memory));
   Memory *gas_map = malloc(sizeof(Memory));
 
+  memory->length = I_INVALID;
+  memory->data = malloc(sizeof(uint64_t) * I_INVALID);
+
+  gas_map->data = malloc(sizeof(uint64_t) * I_INVALID);
+  gas_map->length = I_INVALID;
+
   VM *vm = malloc(sizeof(VM));
 
   vm->mode = M_ROOT;
@@ -101,6 +107,20 @@ uint64_t smem(VM* vm, uint64_t offset, uint64_t value) {
   }
 }
 
+uint8_t valid_instruction(uint8_t mode, uint64_t instr) {
+  if (mode == M_ROOT) {
+    return 1;
+  } else if (mode == M_CHILD && instr <= 6) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+uint64_t args(VM* vm, uint64_t arg) {
+  return gmem(vm, vm->ip+arg);
+}
+
 void run(VM* vm, uint8_t debug) {
   printf("Running\n");
 
@@ -112,6 +132,48 @@ void run(VM* vm, uint8_t debug) {
     }
 
     uint8_t instr = gmem(vm, vm->ip);
+
+    if (instr >= I_INVALID || !valid_instruction(vm->mode, instr)) {
+      vm->mode = M_ROOT;
+      vm->state = S_IIE;
+      vm->oldip = vm->ip;
+      vm->ip = 0;
+      continue;
+    }
+
+    uint64_t instrcost = vm->gas_map->data[instr];
+
+    if (vm->mode == M_CHILD && (uint64_t)(vm->gas) - instrcost < 0) {
+      vm->mode = M_ROOT;
+      vm->state = S_OOG;
+      vm->ip = 0;
+      continue;
+    }
+
+    if (vm->mode == M_CHILD) {
+      vm->gas -= instrcost;
+    }
+
+    uint8_t jump = 0;
+
+    //uint64_t* args =
+    if (instr == I_ADD) {
+      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) + gmem(vm, args(vm, 1)));
+    } else if (instr == I_ADDI) {
+      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) + args(vm, 1));
+    } else if (instr == I_MUL) {
+      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) * gmem(vm, args(vm, 1)));
+    } else if (instr == I_MULI) {
+      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) * args(vm, 1));
+    } else if (instr == I_JMP) {
+      vm->ip = args(vm, 0);
+      jump = 1;
+    } else if (instr == I_JLE) {
+      if (gmem(vm, args(vm, 1)) < gmem(vm, args(vm, 2))) {
+        vm->ip = args(vm, 0);
+        jump = 1;
+      }
+    }
   }
 }
 
