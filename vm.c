@@ -6,6 +6,17 @@
 
 #include "vm.h"
 
+void clear_memory(Memory* memory) {
+  free(memory->data);
+  free(memory);
+}
+
+void clear_sectors(VM* vm) {
+  if (vm->num_sectors > 0) {
+    free(vm->memory_map);
+  }
+}
+
 VM* init_vm() {
 
   FILE *fp;
@@ -26,10 +37,9 @@ VM* init_vm() {
   fread(memory->data, sizeof(uint64_t), fsize/sizeof(uint64_t), fp);
 
   Memory *external_memory = malloc(sizeof(Memory));
+
+  // number of instructions is constant
   Memory *gas_map = malloc(sizeof(Memory));
-
-
-
   gas_map->data = malloc(sizeof(uint64_t) * I_INVALID);
   gas_map->length = I_INVALID;
 
@@ -55,14 +65,6 @@ VM* init_vm() {
   vm->memory_map = sector_pt;
 
   return vm;
-}
-
-void build_gmap(VM* vm, uint64_t offset) {
-
-}
-
-void build_mmap(VM* vm, uint64_t offset) {
-
 }
 
 uint64_t mmap_len(VM* vm) {
@@ -145,7 +147,24 @@ uint8_t valid_instruction(uint8_t mode, uint64_t instr) {
 }
 
 uint64_t args(VM* vm, uint64_t arg) {
-  return gmem(vm, vm->ip+arg);
+  return gmem(vm, vm->ip+1+arg);
+}
+
+void build_gmap(VM* vm, uint64_t offset) {
+  for (int i=0;i<I_INVALID;i++) {
+    vm->gas_map->data[i] = gmem(vm, offset+i);
+  }
+}
+
+void build_mmap(VM* vm, uint64_t offset) {
+  clear_sectors(vm);
+  vm->num_sectors = gmem(vm, offset);
+  printf("Creating %lu sectors at offset %lu\n", vm->num_sectors, offset);
+  vm->memory_map = malloc(sizeof(Sector) * vm->num_sectors);
+  for (int i=0;i<vm->num_sectors;i++) {
+    vm->memory_map[i].start = gmem(vm, offset+1+2*i);
+    vm->memory_map[i].length = gmem(vm, offset+1+2*i+1);
+  }
 }
 
 void run(VM* vm, uint8_t debug) {
@@ -171,7 +190,8 @@ void run(VM* vm, uint8_t debug) {
     uint64_t instrcost = vm->gas_map->data[instr];
 
     if (debug) {
-      printf("INSTR: %" PRIu8 "\n", instr);
+      //printf("INSTR: %" PRIu8 "\n", instr);
+      printf("INSTR: %s\n", istrings[instr]);
     }
 
     if (vm->mode == M_CHILD && (uint64_t)(vm->gas) - instrcost < 0) {

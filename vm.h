@@ -33,6 +33,8 @@
 
 uint8_t INSTRUCTION_ARGS[] = {2,2,2,2,2,1,3,0,1,1,2,2,2,1};
 
+const char *istrings[] = {"I_ADD", "I_ADDI", "I_MUL", "I_MULI", "I_SET", "I_JMP", "I_JLE", "I_INT", "I_JIT", "I_MLN", "I_REM", "I_RUN", "I_LMT", "I_OLDIP"};
+
 typedef struct {
   uint64_t start;
   uint64_t length;

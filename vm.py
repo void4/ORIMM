@@ -223,6 +223,7 @@ class VM:
 				elif instr == I_RUN:
 					# Start a child process by providing a memory map and a starting instruction address within it, switch the vm to child mode
 					# 0: real start address of memory map, +ip?
+					print("Creating sectors", args[0])
 					self.build_mmap(args[0])
 					self.ip = self.gmem(args[1])
 					# have to do this in the end to not interfere with mmap calculations
