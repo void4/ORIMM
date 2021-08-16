@@ -57,7 +57,7 @@ class VM:
 		self.oldip = 0
 
 		self.interrupt = False
-		
+
 		self.memory = memory
 		self.external_memory = []
 		# memory layout: 0: first instruction
@@ -231,6 +231,7 @@ class VM:
 				elif instr == I_INT:
 					# Software interrupt to real memory address 0
 					self.mode = M_ROOT
+					self.oldip = self.ip
 					self.ip = 0
 					jump = True
 				elif instr == I_LMT:

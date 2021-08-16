@@ -46,6 +46,10 @@ void build_gmap(VM* vm, uint64_t offset) {
 
 }
 
+void build_mmap(VM* vm, uint64_t offset) {
+
+}
+
 uint64_t mmap_len(VM* vm) {
   uint64_t total = 0;
   for (int i = 0; i<vm->num_sectors;i++) {
@@ -157,22 +161,69 @@ void run(VM* vm, uint8_t debug) {
     uint8_t jump = 0;
 
     //uint64_t* args =
-    if (instr == I_ADD) {
-      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) + gmem(vm, args(vm, 1)));
-    } else if (instr == I_ADDI) {
-      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) + args(vm, 1));
-    } else if (instr == I_MUL) {
-      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) * gmem(vm, args(vm, 1)));
-    } else if (instr == I_MULI) {
-      smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) * args(vm, 1));
-    } else if (instr == I_JMP) {
-      vm->ip = args(vm, 0);
-      jump = 1;
-    } else if (instr == I_JLE) {
-      if (gmem(vm, args(vm, 1)) < gmem(vm, args(vm, 2))) {
+    switch(instr) {
+      case I_ADD:
+        smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) + gmem(vm, args(vm, 1)));
+        break;
+      case I_ADDI:
+        smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) + args(vm, 1));
+        break;
+      case I_MUL:
+        smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) * gmem(vm, args(vm, 1)));
+        break;
+      case I_MULI:
+        smem(vm, args(vm, 0), gmem(vm, args(vm, 0)) * args(vm, 1));
+        break;
+      case I_JMP:
         vm->ip = args(vm, 0);
         jump = 1;
+        break;
+      case I_JLE:
+        if (gmem(vm, args(vm, 1)) < gmem(vm, args(vm, 2))) {
+          vm->ip = args(vm, 0);
+          jump = 1;
+        }
+        break;
+      case I_RUN:
+        build_mmap(vm, args(vm, 0));
+        vm->ip = gmem(vm, args(vm, 1));
+        vm->mode = M_CHILD;
+        jump = 1;
+        break;
+      case I_INT:
+        vm->mode = M_ROOT;
+        vm->oldip = vm->ip;
+        vm->ip = 0;
+        jump = 1;
+        break;
+      case I_LMT:
+        build_gmap(vm, args(vm, 0));
+        vm->gas = args(vm, 1);
+        break;
+      case I_JIT:
+        if (vm->interrupt) {
+          vm->interrupt = 0;
+          vm->ip = args(vm, 0);
+          jump = 1;
+        }
+        break;
+      case I_REM:
+        if (args(vm, 1) < vm->external_memory->length) {
+          smem(vm, args(vm, 0), vm->external_memory->data[args(vm, 1)]);
+        }
+        break;
+      case I_MLN:
+        if (vm->mode == M_ROOT) {
+          smem(vm, args(vm, 0), vm->memory->length);
+        } else {
+          smem(vm, args(vm, 0), mmap_len(vm));
+        }
+        break;
       }
+
+    if (!jump) {
+      // TODO check for out of bounds here?!
+      vm->ip += 1 + INSTRUCTION_ARGS[instr];
     }
   }
 }
