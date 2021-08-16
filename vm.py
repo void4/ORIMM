@@ -10,11 +10,11 @@ WORDMAX = EXP-1
 
 # Number of instructions, their opcodes and names
 NUMINSTR = 14
-I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI, I_OLDIP = range(NUMINSTR)
-INAMES = "I_ADD, I_MUL, I_JMP, I_JLE, I_RUN, I_LMT, I_INT, I_JIT, I_REM, I_MLN, I_SET, I_ADDI, I_MULI, I_OLDIP".replace("I_", "").split(", ")
+I_ADD, I_ADDI, I_MUL, I_MULI, I_SET, I_JMP, I_JLE, I_INT, I_JIT, I_MLN, I_REM, I_RUN, I_LMT, I_OLDIP = range(NUMINSTR)
+INAMES = "I_ADD, I_ADDI, I_MUL, I_MULI, I_SET, I_JMP, I_JLE, I_INT, I_JIT, I_MLN, I_REM, I_RUN, I_LMT, I_OLDIP".replace("I_", "").split(", ")
 
 # Number of argument words following each instruction
-I_ARGS = [2,2,1,3,2,2,0,1,2,1,2,2,2,1]
+I_ARGS = [2,2,2,2,2,1,3,0,1,1,2,2,2,1]
 
 # Arithmetic Instructions
 II_ARITH = [I_ADD, I_MUL, I_SET, I_ADDI, I_MULI]

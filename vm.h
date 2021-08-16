@@ -31,7 +31,7 @@
 
 #define I_INVALID 14
 
-uint8_t INSTRUCTION_ARGS[] = {2,2, 2,2, 2, 1,2, 0,1, 1,1, 2,2, 1};
+uint8_t INSTRUCTION_ARGS[] = {2,2,2,2,2,1,3,0,1,1,2,2,2,1};
 
 typedef struct {
   uint64_t start;

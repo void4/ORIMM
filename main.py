@@ -27,6 +27,13 @@ print(len(data), "BYTES", len(compressed), "COMPRESSED")
 # use segment:labels hierarchy, or allow arbitrary trees with indentation?
 # more compact instruction set later!
 
+import struct
+
+with open("code.omg", "wb+") as f:
+    for word in memory:
+        # TODO consider endianness
+        f.write(struct.pack("<q", word))
+
 print(memory)
 print(len(memory), "words", len(memory)*BITS//8, "bytes")
 #exit(1)

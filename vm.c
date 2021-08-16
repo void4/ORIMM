@@ -8,17 +8,32 @@
 
 VM* init_vm() {
 
-  Sector* sector_pt;
+  FILE *fp;
+
+  fp = fopen("code.omg", "r");
+
+  fseek(fp, 0L, SEEK_END);
+  uint64_t fsize = ftell(fp);
+  fseek(fp, 0L, SEEK_SET);
 
   Memory *memory = malloc(sizeof(Memory));
+
+  memory->length = fsize/sizeof(uint64_t);
+  memory->data = malloc(fsize);
+
+  printf("File size: %" PRIu64, fsize);
+
+  fread(memory->data, sizeof(uint64_t), fsize/sizeof(uint64_t), fp);
+
   Memory *external_memory = malloc(sizeof(Memory));
   Memory *gas_map = malloc(sizeof(Memory));
 
-  memory->length = I_INVALID;
-  memory->data = malloc(sizeof(uint64_t) * I_INVALID);
+
 
   gas_map->data = malloc(sizeof(uint64_t) * I_INVALID);
   gas_map->length = I_INVALID;
+
+  Sector* sector_pt;
 
   VM *vm = malloc(sizeof(VM));
 
@@ -75,15 +90,23 @@ uint64_t get_offset(VM* vm, uint64_t virtual_address) {
 }
 
 void print_memory(VM* vm) {
+  printf("[");
   if (vm->mode == M_ROOT) {
     for (int i=0;i<vm->memory->length;i++) {
       printf("%" PRIu64, vm->memory->data[i]);
+      if (i < vm->memory->length-1) {
+        printf(",");
+      }
     }
   } else {
     for (int i=0;i<mmap_len(vm);i++) {
       printf("%" PRIu64, vm->memory->data[get_offset(vm, i)]);
+      if (i < mmap_len(vm)-1) {
+        printf(",");
+      }
     }
   }
+  printf("]\n");
 }
 
 uint64_t mmap(VM* vm, uint64_t offset) {
@@ -146,6 +169,10 @@ void run(VM* vm, uint8_t debug) {
     }
 
     uint64_t instrcost = vm->gas_map->data[instr];
+
+    if (debug) {
+      printf("INSTR: %" PRIu8 "\n", instr);
+    }
 
     if (vm->mode == M_CHILD && (uint64_t)(vm->gas) - instrcost < 0) {
       vm->mode = M_ROOT;

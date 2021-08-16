@@ -63,4 +63,4 @@ data:
 dw 1;virtual memlen
 
 segment free:
-dzw 100
+dzw 10
