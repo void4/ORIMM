@@ -32,7 +32,7 @@ VM* init_vm() {
   memory->length = fsize/sizeof(uint64_t);
   memory->data = malloc(fsize);
 
-  printf("File size: %" PRIu64, fsize);
+  printf("File size: %" PRIu64 "\n", fsize);
 
   fread(memory->data, sizeof(uint64_t), fsize/sizeof(uint64_t), fp);
 
